@@ -38,18 +38,26 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+    # Applications locales
     'accounts.apps.AccountsConfig',
     'base.apps.BaseConfig',
+    
+    # Applications tierces
+    'rest_framework',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Middleware CORS avant CommonMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'backend.middleware.CSRFExemptMiddleware',  # Notre middleware personnalisé pour l'exemption CSRF
+    'backend.middleware.ReactDevProxyMiddleware',  # Middleware pour faciliter le développement React
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -137,7 +145,62 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
+# Répertoire où collectstatic placera tous les fichiers statiques
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Configurations pour servir l'application React
+REACT_APP_DIR = os.path.join(os.path.dirname(BASE_DIR), 'frontend')
+
+# Configuration pour le déploiement en production
+if not DEBUG:
+    # Sécuriser les cookies en production
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 an
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Configurations de sécurité pour Django
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Configuration REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+}
+
+# Configuration CORS pour permettre à React de communiquer avec l'API
+CORS_ALLOW_ALL_ORIGINS = True  # En développement uniquement, à restreindre en production
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+CORS_ALLOW_HEADERS = ['Content-Type', 'X-Requested-With', 'Authorization']
+
+# Liste des origins autorisées pour le CORS - prioritaires si CORS_ALLOW_ALL_ORIGINS=False
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',  # Serveur de développement React
+    'http://127.0.0.1:3000',
+]
+
+# Configuration pour le proxying des requêtes React en développement
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+# Configuration CSRF pour les API - ne pas vérifier pour les routes /api/ en développement
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']
+CSRF_COOKIE_HTTPONLY = False  # Permet à JavaScript d'accéder au cookie CSRF

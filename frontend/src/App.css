@@ -1,0 +1,43 @@
+/* Styles simplifiés pour la version temporaire */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fa;
+  color: #212529;
+  line-height: 1.6;
+}
+
+.App {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.App-header {
+  background-color: #343a40;
+  color: white;
+  padding: 3rem 0;
+  text-align: center;
+}
+
+.App-header h1 {
+  margin-bottom: 1rem;
+}
+
+main {
+  flex-grow: 1;
+  padding: 2rem 0;
+}
+
+.footer {
+  width: 100%;
+  background-color: #343a40;
+  color: white;
+}

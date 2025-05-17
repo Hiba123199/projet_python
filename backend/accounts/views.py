@@ -10,7 +10,7 @@ def login_view(request):
     # Préparer le contexte pour le template
     context = {}
     
-    # Vérifier si l'utilisateur est déjà connecté
+    # Si l'utilisateur est déjà connecté
     if request.user.is_authenticated:
         # Au lieu de rediriger, montrer un message indiquant que l'utilisateur est déjà connecté
         messages.info(request, f'You are already logged in as {request.user.username}')
@@ -54,21 +54,54 @@ def register_view(request):
         return redirect('post_list')
         
     if request.method == 'POST':
-        form = RegistrationForm(request.POST)
-        if form.is_valid():
+        # Récupérer les données du formulaire HTML
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        
+        # Validation manuelle
+        error = False
+        
+        # Vérification que tous les champs requis sont remplis
+        if not username:
+            messages.error(request, 'Username is required')
+            error = True
+        if not email:
+            messages.error(request, 'Email is required')
+            error = True
+        if not password1:
+            messages.error(request, 'Password is required')
+            error = True
+        if not password2:
+            messages.error(request, 'Password confirmation is required')
+            error = True
+        
+        # Vérification que les mots de passe correspondent
+        if password1 and password2 and password1 != password2:
+            messages.error(request, 'Passwords do not match')
+            error = True
+        
+        # Vérification que l'utilisateur n'existe pas déjà
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists')
+            error = True
+        
+        # Vérification que l'email n'existe pas déjà
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email already exists')
+            error = True
+        
+        # Si aucune erreur, créer l'utilisateur
+        if not error:
             try:
-                # Enregistrer l'utilisateur avec les données du formulaire
-                username = form.cleaned_data.get('username')
-                password = form.cleaned_data.get('password1')  # Important: c'est password1 de UserCreationForm
-                email = form.cleaned_data.get('email')
-                first_name = form.cleaned_data.get('first_name')
-                last_name = form.cleaned_data.get('last_name')
-                
-                # Créer l'utilisateur directement
+                # Créer l'utilisateur
                 user = User.objects.create_user(
                     username=username,
                     email=email,
-                    password=password,  # Django hashera le mot de passe automatiquement
+                    password=password1,
                     first_name=first_name,
                     last_name=last_name
                 )
@@ -77,16 +110,11 @@ def register_view(request):
                 messages.success(request, f'Account successfully created for {user.username}! You can now login.')
                 
                 # Rediriger vers la page de connexion
+                print("Redirecting to login_view after successful registration")
                 return redirect('login_view')
             except Exception as e:
                 print(f"Erreur lors de la création de l'utilisateur: {str(e)}")
                 messages.error(request, f'Error creating account: {str(e)}')
-        else:
-            # Afficher les erreurs du formulaire
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f'{field}: {error}')
-    else:
-        form = RegistrationForm()
     
-    return render(request, 'registration/register.html', {'form': form})
+    # Si la méthode n'est pas POST ou s'il y a des erreurs de validation
+    return render(request, 'registration/register.html', {})
